@@ -5,6 +5,7 @@ from sqlalchemy import Table
 from sqlalchemy import Column
 from sqlalchemy import String
 from sqlalchemy import Integer
+from sqlalchemy import Boolean
 from sqlalchemy import create_engine
 
 from sqlalchemy.orm import mapper
@@ -17,7 +18,7 @@ Session = sessionmaker(bind=engine)
 DBSession = Session()
 
 class EAVType(object):
-    def __init__(self, entity, attribute, value):
+    def __init__(self, entity, attribute, value, is_method=False):
         '''Stable state constructor, the combination of all members constitutes the unique
         constraint. The addition of the namespace member allows for the duplication of the
         other members.
@@ -26,10 +27,12 @@ class EAVType(object):
         entity,     The entity the instance will represent.
         attribute,  The attribute the instance will represent.
         value,      The value the instance will represent.
+        is_method,  A boolean indicating if the attribute is a method.
         '''
         self.entity = entity
         self.attribute = attribute
         self.value = value
+        self.is_method = is_method
         DBSession.add(self)
         DBSession.flush()
 
@@ -50,13 +53,22 @@ eav_type = Table(
     Column('id', Integer, primary_key=True),
     Column('entity', String),
     Column('attribute', String),
-    Column('value', String),)
+    Column('value', String),
+    Column('is_method',Boolean),)
 
 
 mapper(EAVType, eav_type)
 
 class DynamicType(object):
+    '''A type that can dynamically set its attributes based on the values set in a
+    EAV table for a given entity.
+    '''
     def __init__(self,entity):
+        '''Constructor that sets the type of the instance.
+
+        Arguments:
+        entity,  The object that indicates the type of the instance.
+        '''
         self.entity = entity
         
     def __repr__(self):
@@ -64,6 +76,15 @@ class DynamicType(object):
 
     def __str__(self):
         return str(self.entity)
+
+    def __eq__(self,other):
+        try:
+            if self.entity == other.entity:
+                return True
+            else:
+                return False
+        except AttributeError:
+            return False
 
     @classmethod
     def with_uri(cls,uri):
