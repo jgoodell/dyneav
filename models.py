@@ -1,4 +1,5 @@
 import types
+import pickle
 
 from sqlalchemy import MetaData
 from sqlalchemy import Table
@@ -96,14 +97,23 @@ class DynamicType(object):
         instance = cls(uri)
         attributes = DBSession.query(EAVType).filter_by(entity=uri).all()
         for attribute in attributes:
-            setattr(instance,attribute.attribute,attribute.value)
+            if attribute.is_method:
+                setattr(instance,attribute.attribute,types.MethodType(pickle.loads(attribute.value),instance,EAVType))
+            else:
+                setattr(instance,attribute.attribute,attribute.value)
         return instance
 
 if __name__ == "__main__":
     metadata.create_all()
+
+    def do_something(self):
+        return self.title
+    
     #Load up the DB
     entry10 = EAVType("/rollings/j/harry_potter/philosophers_stone","date","3/5/2014")
     entry11 = EAVType("/rollings/j/harry_potter/philosophers_stone","title","The Philosopher's Stone")
+    entry12 = EAVType("/rollings/j/harry_potter/philosophers_stone","do_something",
+                      pickle.dumps(do_something),is_method=True)
     entry20 = EAVType("/rollings/j/harry_potter/chamber_of_secrets","date","3/5/2014")
     entry21 = EAVType("/rollings/j/harry_potter/chamber_of_secrets","title","The Chamber of Secrets")
     entry30 = EAVType("/rollings/j/harry_potter/prisoner_of_azkaban","date","3/5/2014")
@@ -118,7 +128,13 @@ if __name__ == "__main__":
     entry71 = EAVType("/rollings/j/harry_potter/deathly_hallows","title","The Deathly Hallows")
     DBSession.commit()
 
-    dynamic_book = DynamicType.with_uri("/rollings/j/harry_potter/prisoner_of_azkaban")
-    print(dynamic_book)
-    print(dynamic_book.title)
-    print(dynamic_book.date)
+    dynamic_book01 = DynamicType.with_uri("/rollings/j/harry_potter/prisoner_of_azkaban")
+    print(dynamic_book01)
+    print(dynamic_book01.title)
+    print(dynamic_book01.date)
+
+    dynamic_book02 = DynamicType.with_uri("/rollings/j/harry_potter/philosophers_stone")
+    print(dynamic_book02)
+    print(dynamic_book02.title)
+    print(dynamic_book02.date)
+    print(dynamic_book02.do_something())
