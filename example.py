@@ -1,5 +1,9 @@
+import types
+import pickle
+
 from dyneav import EAVType
 from dyneav import DBSession
+from dyneav import metadata
 
 class DynamicType(object):
     '''A type that can dynamically set its attributes based on the values set in a

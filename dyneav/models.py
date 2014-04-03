@@ -1,6 +1,3 @@
-import types
-import pickle
-
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import Column
@@ -56,7 +53,6 @@ eav_type = Table(
     Column('attribute', String),
     Column('value', String),
     Column('is_method',Boolean),)
-
 
 mapper(EAVType, eav_type)
 
